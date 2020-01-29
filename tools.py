@@ -1,3 +1,79 @@
+import pandas as pd
+from datetime import date
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+plt.style.use('ggplot')
+pd.options.display.float_format = '{:.3f}'.format
+
+def execute_simulations(
+        Scenario,
+        Income,
+        IYearGrowth,
+        Expenses,
+        EYearGrowth,
+        SavingsInitial,
+        PropertyPrice,
+        PPYearGrowth,
+        Years,
+        DepositRate,
+        Rent,
+        RYearGrowth,
+        MortgageRate,
+        MortgageTermMonths):
+    output_table = pd.MultiIndex.from_product([
+    Scenario,
+    Income,
+    IYearGrowth,
+    Expenses,
+    EYearGrowth,
+    SavingsInitial,
+    PropertyPrice,
+    PPYearGrowth,
+    Years,
+    DepositRate,
+    Rent,
+    RYearGrowth,
+    MortgageRate,
+    MortgageTermMonths
+    ],
+    names = [
+    'Scenario',
+    'Income',
+    'IYearGrowth',
+    'Expenses',
+    'EYearGrowth',
+    'SavingsInitial',
+    'PropertyPrice',
+    'PPYearGrowth',
+    'Years',
+    'DepositRate',
+    'Rent',
+    'RYearGrowth',
+    'MortgageRate',
+    'MortgageTermMonths'
+    ])
+    output_table = pd.DataFrame(index = output_table).reset_index()
+    for i in output_table.index:
+        s = investing_simulator(
+        Scenario = output_table.loc[i, 'Scenario'],
+        Income = output_table.loc[i, 'Income'],
+        IYearGrowth = output_table.loc[i, 'IYearGrowth'],
+        Expenses = output_table.loc[i, 'Expenses'],
+        EYearGrowth = output_table.loc[i, 'EYearGrowth'],
+        SavingsInitial = output_table.loc[i, 'SavingsInitial'],
+        PropertyPrice = output_table.loc[i, 'PropertyPrice'],
+        PPYearGrowth = output_table.loc[i, 'PPYearGrowth'],
+        Years = output_table.loc[i, 'Years'],
+        DepositRate = output_table.loc[i, 'DepositRate'],
+        Rent = output_table.loc[i, 'Rent'],
+        RYearGrowth = output_table.loc[i, 'RYearGrowth'],
+        MortgageRate = output_table.loc[i, 'MortgageRate'],
+        MortgageTermMonths = output_table.loc[i, 'MortgageTermMonths']
+        )
+        output_table.loc[i, 'Capital'] =  s.execute()
+    return output_table
+
 class investing_simulator():
     
     def __init__(self,
@@ -15,7 +91,7 @@ class investing_simulator():
                  RYearGrowth, 
                  MortgageRate,
                  MortgageTermMonths,
-                 isDetailed):
+                 isDetailed=False):
         
         # Init variables
         self.Scenario = Scenario
@@ -41,32 +117,30 @@ class investing_simulator():
         self.MortgageTermMonths = MortgageTermMonths
         self.isDetailed = isDetailed
         
-        # Execute calculations
+    # Execute calculations
+    def execute(self):
         self.get_structure()
-        
+
         if self.Scenario == 'Rent&Buy':
             self.renting_buying()
-        
+
         if self.Scenario == 'Only Renting':
             self.only_renting()
 
         if self.Scenario == 'Standard Mortgage':
             self.stardard_mortgage()
-        
+
         if self.Scenario == 'Early Repayment Mortgage':
             self.mortgage_repayment()
-            
-            
-        
+
         if self.isDetailed==True:
             self.get_charts()
-        print('Capital {0}M'.format(round(self.cash_result()/1000000, 2)))
+#         print(self.Scenario, '{0}M'.format(round(self.cash_result()/1000000, 2)))
 
-        
+        return self.cash_result()
 
     def cash_result(self):
-        return round(self.df.iloc[self.df.shape[0]-1, self.df.columns.get_loc('Balance')] +\
-                  self.df.iloc[self.df.shape[0]-1, self.df.columns.get_loc('PropertyPrice')])
+        return round(self.df.iloc[self.df.shape[0]-1, self.df.columns.get_loc('Capital')])
     
     def get_charts(self):
         fig, ax = plt.subplots(1,2, figsize=(15, 5))
@@ -128,27 +202,31 @@ class investing_simulator():
 
                 self.df.iloc[i, self.df.columns.get_loc('Capital')] = self.df.iloc[i, self.df.columns.get_loc('Balance')]
 
-        # How much months we need to buy the house
-        month_to_buy = min([i for i, b in enumerate(list(self.df['Balance'] -\
-                                                         self.df['PropertyPrice'] > 0)) if b==True])
+                
+        try:
+            # How much months we need to buy the house
+            month_to_buy = min([i for i, b in enumerate(list(self.df['Balance'] -\
+                                                             self.df['PropertyPrice'] > 0)) if b==True])
 
-        # Home purchasing
-        self.df.iloc[month_to_buy, self.df.columns.get_loc('Balance')] = \
-                    self.df.iloc[month_to_buy, self.df.columns.get_loc('Balance')] - \
-                    self.df.iloc[month_to_buy, self.df.columns.get_loc('PropertyPrice')]
+            # Home purchasing
+            self.df.iloc[month_to_buy, self.df.columns.get_loc('Balance')] = \
+                        self.df.iloc[month_to_buy, self.df.columns.get_loc('Balance')] - \
+                        self.df.iloc[month_to_buy, self.df.columns.get_loc('PropertyPrice')]
 
 
 
-        # Balance in next months after home purchasing
-        for i in range(0, self.df.shape[0]):
-            if i>month_to_buy:
-                self.df.iloc[i, self.df.columns.get_loc('Balance')] =\
-                    self.df.iloc[i-1, self.df.columns.get_loc('Balance')]*(1+self.DepositRate/12) +\
-                    self.df.iloc[i, self.df.columns.get_loc('Income')] -\
-                    self.df.iloc[i, self.df.columns.get_loc('Expenses')]
+            # Balance in next months after home purchasing
+            for i in range(0, self.df.shape[0]):
+                if i>month_to_buy:
+                    self.df.iloc[i, self.df.columns.get_loc('Balance')] =\
+                        self.df.iloc[i-1, self.df.columns.get_loc('Balance')]*(1+self.DepositRate/12) +\
+                        self.df.iloc[i, self.df.columns.get_loc('Income')] -\
+                        self.df.iloc[i, self.df.columns.get_loc('Expenses')]
 
-        self.df.iloc[i, self.df.columns.get_loc('Capital')] = self.df.iloc[i, self.df.columns.get_loc('Balance')] \
-        + self.df.iloc[i, self.df.columns.get_loc('PropertyPrice')]
+            self.df.iloc[i, self.df.columns.get_loc('Capital')] = self.df.iloc[i, self.df.columns.get_loc('Balance')] \
+            + self.df.iloc[i, self.df.columns.get_loc('PropertyPrice')]
+        except:
+            self.df.iloc[i, self.df.columns.get_loc('Capital')] = self.df.iloc[i, self.df.columns.get_loc('Balance')]
     
         
     def only_renting(self):
@@ -189,6 +267,15 @@ class investing_simulator():
         self.df.iloc[:, self.df.columns.get_loc('MortgagePayment')] =\
            self.df.iloc[0, self.df.columns.get_loc('StartPropertyDebt')]*\
             (self.MortgageRate/12 + (self.MortgageRate/12)/((1+self.MortgageRate/12)**(self.MortgageTermMonths)-1))
+        
+        # Check the size of mortgage payment
+        if self.df.iloc[0, self.df.columns.get_loc('Income')] -\
+               self.df.iloc[0, self.df.columns.get_loc('Expenses')] -\
+               self.df.iloc[0, self.df.columns.get_loc('MortgagePayment')]<0:
+            print("Mortgage is not available")
+            return
+        
+        
 
         # Money for the loan repayment
         self.df.iloc[0, self.df.columns.get_loc('Principal')] =\
@@ -212,11 +299,6 @@ class investing_simulator():
         # Balance in next months
         for i in range(0, self.df.shape[0]):
             if i>0:
-                # All expenses
-                self.df.iloc[i, self.df.columns.get_loc('Balance')] =\
-                    self.df.iloc[i, self.df.columns.get_loc('Income')] -\
-                    self.df.iloc[i, self.df.columns.get_loc('Expenses')] -\
-                    self.df.iloc[i, self.df.columns.get_loc('MortgagePayment')]
 
                 # Check wheter we still have the debt
                 if self.df.iloc[i-1, self.df.columns.get_loc('EndPropertyDebt')] > 1:
@@ -239,9 +321,6 @@ class investing_simulator():
                         self.df.iloc[i, self.df.columns.get_loc('StartPropertyDebt')] -\
                         self.df.iloc[i, self.df.columns.get_loc('Principal')]
 
-                    self.df.iloc[i, self.df.columns.get_loc('Capital')] = self.df.iloc[i, self.df.columns.get_loc('Balance')] +\
-                        self.df.iloc[i, self.df.columns.get_loc('PropertyPrice')] -\
-                        self.df.iloc[i, self.df.columns.get_loc('EndPropertyDebt')]
 
                 else:
                     self.df.iloc[i, self.df.columns.get_loc('MortgagePayment')] = 0
@@ -249,12 +328,13 @@ class investing_simulator():
                     self.df.iloc[i, self.df.columns.get_loc('Principal')] = 0
                     self.df.iloc[i, self.df.columns.get_loc('StartPropertyDebt')] = 0
                     self.df.iloc[i, self.df.columns.get_loc('EndPropertyDebt')] = 0
-
+                    
+                  
                 self.df.iloc[i, self.df.columns.get_loc('Balance')] =\
                     self.df.iloc[i-1, self.df.columns.get_loc('Balance')]*(1+self.DepositRate/12) +\
                     self.df.iloc[i, self.df.columns.get_loc('Income')] -\
                     self.df.iloc[i, self.df.columns.get_loc('Expenses')] -\
-                    self.df.iloc[i, self.df.columns.get_loc('Rent')]
+                    self.df.iloc[i, self.df.columns.get_loc('MortgagePayment')]
 
                 self.df.iloc[i, self.df.columns.get_loc('Capital')] = self.df.iloc[i, self.df.columns.get_loc('Balance')] +\
                         self.df.iloc[i, self.df.columns.get_loc('PropertyPrice')] -\
@@ -265,52 +345,59 @@ class investing_simulator():
                 
 
     def mortgage_repayment(self):
+        
         # Balance in first month
         self.df.iloc[0, self.df.columns.get_loc('Balance')] = \
                     self.SavingsInitial +\
                     self.df.iloc[0, self.df.columns.get_loc('Income')] -\
-                    self.df.iloc[0, self.df.columns.get_loc('Expenses')] -\
-                    self.df.iloc[0, self.df.columns.get_loc('Rent')]
+                    self.df.iloc[0, self.df.columns.get_loc('Expenses')]
 
         # Get the loan
         self.df.iloc[0, self.df.columns.get_loc('StartPropertyDebt')] = self.df.iloc[0, self.df.columns.get_loc('PropertyPrice')] -\
             self.df.iloc[0, self.df.columns.get_loc('Balance')]
-
-        # Interest in current debt
-        self.df.iloc[0, self.df.columns.get_loc('Interest')] =\
-            self.df.iloc[0, self.df.columns.get_loc('StartPropertyDebt')]*self.MortgageRate/12
-
-        # Annuity payment
-        self.df.iloc[:, self.df.columns.get_loc('MortgagePayment')] =\
-           self.df.iloc[0, self.df.columns.get_loc('StartPropertyDebt')]*\
-            (self.MortgageRate/12 + (self.MortgageRate/12)/((1+self.MortgageRate/12)**(self.MortgageTermMonths)-1))
-
-        self.df.iloc[0, self.df.columns.get_loc('MortgageAdditionalPayment')] =\
-                    self.df.iloc[0, self.df.columns.get_loc('Income')] -\
-                    self.df.iloc[0, self.df.columns.get_loc('Expenses')]
-
-        # Money for the loan repayment
-        self.df.iloc[0, self.df.columns.get_loc('Principal')] =\
-            self.df.iloc[0, self.df.columns.get_loc('MortgagePayment')] - self.df.iloc[0, self.df.columns.get_loc('Interest')]
-
+        
         # Reset the balance
         self.df.iloc[0, self.df.columns.get_loc('Balance')] = 0
 
-        # Assing end property debt
+        # Interest on current debt
+        self.df.iloc[0, self.df.columns.get_loc('Interest')] =\
+            self.df.iloc[0, self.df.columns.get_loc('StartPropertyDebt')]*self.MortgageRate/12
+
+        # Annuity payment calculation
+        self.df.iloc[:, self.df.columns.get_loc('MortgagePayment')] =\
+           self.df.iloc[0, self.df.columns.get_loc('StartPropertyDebt')]*\
+            (self.MortgageRate/12 + (self.MortgageRate/12)/((1+self.MortgageRate/12)**(self.MortgageTermMonths)-1))
+        
+        # Check the size of mortgage payment
+        if self.df.iloc[0, self.df.columns.get_loc('Income')] -\
+               self.df.iloc[0, self.df.columns.get_loc('Expenses')] -\
+               self.df.iloc[0, self.df.columns.get_loc('MortgagePayment')]<0:
+            print("Mortgage is not available")
+            return
+
+        # No money left for additional payment
+        self.df.iloc[0, self.df.columns.get_loc('MortgageAdditionalPayment')] = 0
+
+        # Principal
+        self.df.iloc[0, self.df.columns.get_loc('Principal')] =\
+            self.df.iloc[0, self.df.columns.get_loc('MortgagePayment')] - self.df.iloc[0, self.df.columns.get_loc('Interest')]
+
+        # Refresh end property debt
         self.df.iloc[0, self.df.columns.get_loc('EndPropertyDebt')] =\
                     self.df.iloc[0, self.df.columns.get_loc('StartPropertyDebt')] -\
                     self.df.iloc[0, self.df.columns.get_loc('Principal')]
-
+        
+        # Net capital at the end of the first month
         self.df.iloc[0, self.df.columns.get_loc('Capital')] = self.df.iloc[0, self.df.columns.get_loc('Balance')] +\
                         self.df.iloc[0, self.df.columns.get_loc('PropertyPrice')] -\
                         self.df.iloc[0, self.df.columns.get_loc('EndPropertyDebt')]
-
-
-
+        
+        # ==============
+        
         # Balance in next months
         for i in range(0, self.df.shape[0]):
             if i>0:
-                # Change mortgage payment due to previus end debt
+                # Change mortgage payment due to the previus end debt
                 self.df.iloc[i, self.df.columns.get_loc('MortgagePayment')] =\
                     self.df.iloc[i-1, self.df.columns.get_loc('EndPropertyDebt')]*\
                     (self.MortgageRate/12 + (self.MortgageRate/12)/((1+self.MortgageRate/12)**(self.MortgageTermMonths)-1))
@@ -333,17 +420,18 @@ class investing_simulator():
                     self.df.iloc[i, self.df.columns.get_loc('Interest')] =\
                         self.df.iloc[i, self.df.columns.get_loc('StartPropertyDebt')]*self.MortgageRate/12
 
-                    # 3 Calculate principal
+                    # 3 Calculate principal share in total payment
                     self.df.iloc[i, self.df.columns.get_loc('Principal')] =\
                         self.df.iloc[i, self.df.columns.get_loc('MortgagePayment')] -\
                         self.df.iloc[i, self.df.columns.get_loc('Interest')]
 
-                    # Addition available amount
+                    # 4 How much money we can pay additionaly
                     self.df.iloc[i, self.df.columns.get_loc('MortgageAdditionalPayment')] =\
                         self.df.iloc[i, self.df.columns.get_loc('Income')] -\
-                        self.df.iloc[i, self.df.columns.get_loc('Expenses')]
+                        self.df.iloc[i, self.df.columns.get_loc('Expenses')] -\
+                        self.df.iloc[i, self.df.columns.get_loc('MortgagePayment')]
 
-                    # 3 Calculate end property debt
+                    # 5 Calculate the end property debt
                     self.df.iloc[i, self.df.columns.get_loc('EndPropertyDebt')] =\
                         self.df.iloc[i, self.df.columns.get_loc('StartPropertyDebt')] -\
                         self.df.iloc[i, self.df.columns.get_loc('Principal')] -\
@@ -351,20 +439,24 @@ class investing_simulator():
 
                     # If we overpay
                     if self.df.iloc[i, self.df.columns.get_loc('EndPropertyDebt')]<0:
-                        # Reset
+                        # Reset the debt
                         self.df.iloc[i, self.df.columns.get_loc('EndPropertyDebt')] = 0
 
-                        #
+                        # Set delta as an additional payment
                         self.df.iloc[i, self.df.columns.get_loc('MortgageAdditionalPayment')] =\
                             self.df.iloc[i, self.df.columns.get_loc('StartPropertyDebt')] -\
                             self.df.iloc[i, self.df.columns.get_loc('Principal')]
 
-                    # 4 Reset the balace
-                    self.df.iloc[i, self.df.columns.get_loc('Balance')] = 0
-
-                    self.df.iloc[i, self.df.columns.get_loc('Capital')] = self.df.iloc[i, self.df.columns.get_loc('Balance')] +\
-                        self.df.iloc[i, self.df.columns.get_loc('PropertyPrice')] -\
-                        self.df.iloc[i, self.df.columns.get_loc('EndPropertyDebt')]
+                        
+                    # Calculate the balance
+                    self.df.iloc[i, self.df.columns.get_loc('Balance')] =\
+                    self.df.iloc[i, self.df.columns.get_loc('Income')] -\
+                    self.df.iloc[i, self.df.columns.get_loc('Expenses')] -\
+                    self.df.iloc[i, self.df.columns.get_loc('MortgagePayment')] -\
+                    self.df.iloc[i, self.df.columns.get_loc('MortgageAdditionalPayment')]
+                    
+                
+                # if we the debt already repaid
                 else:
                     self.df.iloc[i, self.df.columns.get_loc('MortgagePayment')] = 0
                     self.df.iloc[i, self.df.columns.get_loc('Interest')] = 0
@@ -376,9 +468,10 @@ class investing_simulator():
                     self.df.iloc[i, self.df.columns.get_loc('Balance')] =\
                     self.df.iloc[i-1, self.df.columns.get_loc('Balance')]*(1+self.DepositRate/12) +\
                     self.df.iloc[i, self.df.columns.get_loc('Income')] -\
-                    self.df.iloc[i, self.df.columns.get_loc('Expenses')] -\
-                    self.df.iloc[i, self.df.columns.get_loc('Rent')]
-
-                    self.df.iloc[i, self.df.columns.get_loc('Capital')] = self.df.iloc[i, self.df.columns.get_loc('Balance')] +\
-                        self.df.iloc[i, self.df.columns.get_loc('PropertyPrice')] -\
-                        self.df.iloc[i, self.df.columns.get_loc('EndPropertyDebt')]
+                    self.df.iloc[i, self.df.columns.get_loc('Expenses')]
+                    
+                # Calculate net capital
+                self.df.iloc[i, self.df.columns.get_loc('Capital')] = self.df.iloc[i, self.df.columns.get_loc('Balance')] +\
+                    self.df.iloc[i, self.df.columns.get_loc('PropertyPrice')] -\
+                    self.df.iloc[i, self.df.columns.get_loc('EndPropertyDebt')]
+#                 print(self.df.iloc[i, self.df.columns.get_loc('Capital')])
