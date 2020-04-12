@@ -1,4 +1,4 @@
-# 1. What is the most effective way to solve housing problem?
+# What is the most effective way to solve housing problem?
 
 ## Abstract idea
 Sooner or later, everyone must solve the problem of housing.
@@ -14,19 +14,19 @@ Let's figure out what will be the most effective strategy in a given economic co
 4. **Early Repayment Mortgage:** to get a mortgage and constantly make early repayments;
 
 ## Considered economic parameters:
-**Income** — income per month
-**IYearGrowth** – annual change of income
-**Expenses** – living expenses per month
-**EYearGrowth** – annual change of living expenses
-**SavingsInitial** – how much money you've aready saved
-**PropertyPrice** – the price of property in the start point
-**PPYearGrowth** –  annual change of property price
-**Years** – observation period to compare results of different strategies
-**DepositRate** – annual deposit rate
-**Rent** – rent expenses per month
-**RYearGrowth** – annual change of rent expenses
-**MortgageRate** – annual mortgage rate
-**MortgageTermMonths** – mortgage term in month
+* **Income** — income per month
+* **IYearGrowth** – annual change of income
+* **Expenses** – living expenses per month
+* **EYearGrowth** – annual change of living expenses
+* **SavingsInitial** – how much money you've aready saved
+* **PropertyPrice** – the price of property in the start point
+* **PPYearGrowth** –  annual change of property price
+* **Years** – observation period to compare results of different strategies
+* **DepositRate** – annual deposit rate
+* **Rent** – rent expenses per month
+* **RYearGrowth** – annual change of rent expenses
+* **MortgageRate** – annual mortgage rate
+* **MortgageTermMonths** – mortgage term in month
 
 ## How we choose the best strategy
 At the end of the observed period we sell property (if we have) and compare positions in cash.
