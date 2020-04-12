@@ -52,7 +52,11 @@ def sc_calc(
             )
     fig = plt.subplots(figsize=(15, 5))
     c1 = sns.barplot(data=output_table, x='Scenario', y='Capital');
-    c1.set_title('Final result in cash, K')
+    
+    for index, row in output_table.iterrows():
+        c1.text(row.name, row.Capital/2, '{:.1f}M.'.format(row.Capital/1000000), color='white', ha="center", fontsize=16)
+        
+    c1.set_title('Strategies result in cash')
     ylabels = ['{:,.0f}'.format(x) + 'K' for x in c1.get_yticks()/1000]
     c1.set_yticklabels(ylabels);
     return output_table
@@ -149,7 +153,7 @@ def sc_analyse(param):
 
     for s in Scenario:
         c1 = sns.lineplot(data=output_table[output_table['Scenario']==s], x=param, y='Capital', label=s);
-        c1.set_title('How capital influenced by the parameter, K')
+        c1.set_title('The dependence of capital on the parameter, K')
         ylabels = ['{:,.0f}'.format(x) + 'K' for x in c1.get_yticks()/1000]
         c1.set_yticklabels(ylabels);
         
