@@ -1,4 +1,4 @@
-# What is the most effective way to solve housing problem?
+# What is the most effective way to solve personal housing problem?
 
 ## Abstract idea
 Sooner or later, everyone must solve the problem of housing.
@@ -33,15 +33,17 @@ At the end of the observed period we sell property (if we have) and compare posi
 
 
 ## Quick Start
-1. Open interface notebook and find section "Strategy execution"
-2. Enter numbers related to your personal finance (Income, Expeses etc.) and economic environment (Deposit Rate, Property price etc.)
-3. Get the answer what strategy will be the most profitable
+1. Clone this repository
+2. Open [interface notebook](https://github.com/maratkhanbekov/mortgage-simulator/blob/master/Interface.ipynb) and find section "Strategy execution"
+3. Enter numbers related to your personal finance (Income, Expeses etc.) and economic environment (Deposit Rate, Property price etc.)
+4. Get the answer what strategy will be the most profitable
    
 ![alt text](mortgage-demo.gif "Strategy calculation demo")
 
 
 ## Understand relationship between parameters
-1. Open interface notebook and find section "Parameters relationship"
+1. Clone this repository
+1. Open [interface notebook](https://github.com/maratkhanbekov/mortgage-simulator/blob/master/Interface.ipynb) and find section "Parameters relationship"
 2. Choose the parameter that will be considered as a variable while others will be constant
 ![alt text](parameters-relationship.gif "Parameters relationship")
 
